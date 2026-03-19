@@ -1,10 +1,15 @@
 import requests, json
-key = open('.streamlit/secrets.toml').read().split(chr(34))[1]
+
+with open('.streamlit/secrets.toml', 'r') as f:
+    content = f.read()
+key = content.split('"')[1]
+print("Key found:", key[:10], "...")
+
 r = requests.post(
-    'https://api.groq.com/openai/v1/chat/completions',
-    headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json'},
-    json={'model': 'llama-3.1-8b-instant', 'messages': [{'role': 'user', 'content': 'Say hello in one word'}], 'max_tokens': 10},
+    f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}',
+    headers={'Content-Type': 'application/json'},
+    json={'contents': [{'parts': [{'text': 'Say hello in one word'}]}]},
     timeout=15
 )
 print('Status:', r.status_code)
-print(json.dumps(r.json(), indent=2))
+print('Response:', json.dumps(r.json(), indent=2))
