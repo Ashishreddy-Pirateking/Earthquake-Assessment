@@ -158,13 +158,33 @@ def predict_location(lat, lon, depth):
     }
 
 def get_place_name(lat, lon):
+    # Try Nominatim first
     try:
         from geopy.geocoders import Nominatim
-        geo = Nominatim(user_agent="seismic_app_v5", timeout=5)
+        geo = Nominatim(user_agent="seismic_hazard_v5", timeout=8)
         loc = geo.reverse(f"{lat}, {lon}", language="en")
-        return loc.address if loc else decimal_to_dms(lat, lon)
+        if loc and loc.address:
+            return loc.address
     except:
-        return decimal_to_dms(lat, lon)
+        pass
+
+    # Fallback: OpenStreetMap direct API
+    try:
+        r = requests.get(
+            "https://nominatim.openstreetmap.org/reverse",
+            params={"lat": lat, "lon": lon,
+                    "format": "json", "zoom": 10},
+            headers={"User-Agent": "SeismicHazardApp/1.0"},
+            timeout=8
+        )
+        if r.status_code == 200:
+            data = r.json()
+            return data.get("display_name", decimal_to_dms(lat, lon))
+    except:
+        pass
+
+    return decimal_to_dms(lat, lon)
+
 
 # ── Geology via Groq + fallback ───────────────────────────────────
 def get_geology(lat, lon, place_name):
